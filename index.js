@@ -51,4 +51,9 @@ app.post("/books",async(request,response)=>{
   response.send(result)
 })
 
+app.get("/books",async(request,response)=>{
+    const books=await client.db("b28wd").collection("books").find({}).toArray()
+    response.send(books)
+})
+
 app.listen(PORT,console.log("app started in ",PORT))
