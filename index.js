@@ -45,6 +45,26 @@ app.get("/flight/:id",async(request,response)=>{
   response.send(flight)
 })
 
+app.post("/flight",async(request,response)=>{
+    const flight=request.body
+    console.log(flight)
+    const result=await client.db("b28wd").collection("flights").insertOne(flight)
+    response.send(result)
+})
+
+app.put("/flight/:id",async(request,response)=>{
+    const {id}=request.params
+    const flight=request.body
+    const result=await client.db("b28wd").collection("flights").updateOne({_id:ObjectID(id)},{$set:flight})
+    response.send(result)
+})
+
+app.delete("/flight/:id",async(request,response)=>{
+    const {id}=request.params
+    const flight=await client.db("b28wd").collection("flights").deleteOne({_id:ObjectID(id)})
+    response.send(flight)
+  })
+
 app.post("/books",async(request,response)=>{
   const books=request.body
   const result=await client.db("b28wd").collection("books").insertMany(books)
