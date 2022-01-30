@@ -15,9 +15,11 @@
     "nodemon": "^2.0.15"
   },
   "dependencies": {
+    "bcrypt": "^5.0.1",
     "cors": "^2.8.5",
     "dotenv": "^14.3.2",
     "express": "^5.0.0-alpha.8",
+    "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.2.1"
   }
 }

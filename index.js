@@ -3,6 +3,8 @@ import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { ObjectID } from 'bson';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 dotenv.config()
 
@@ -65,6 +67,51 @@ app.delete("/flight/:id",async(request,response)=>{
     response.send(flight)
   })
 
+  app.post("/flights/signup",async(request,response)=>{
+    const {email,password}=request.body;
+    console.log("bode info",email,password)
+
+    // check if user is already present, if user is not found it will return null 
+    const userPresent= await getUserByEmail(email)
+    
+    // if already present , then userPresent is not null i.e if will be true
+    if(userPresent){
+        response.send({message:"user already exists"})
+        // break,exit from futher code
+        return;
+    }
+    //get hassed password 
+    const hashedPassword=await genPassword(password) 
+     const result=await client.db("b28wd").collection("flights-users").insertOne({email:email,password:hashedPassword})
+     response.send(result)
+})
+
+app.post("/flights/login",async(request,response)=>{
+    const {email,password}=request.body
+
+    // check is email is present 
+    const userPresent= await getUserByEmail(email)
+
+    if(!userPresent){
+       response.send({message:"invalid user"})
+       return
+    }
+    //  get the stored/saved password
+    const storedPassword=userPresent.password
+    // comape saved password and entered password, caomapre will return true if matches else return false
+    const isPasswordMatch=await bcrypt.compare(password,storedPassword)
+
+    if(isPasswordMatch){
+        // asign a token ,1st parameter unick value , 2nd secrect key
+        const token=jwt.sign({id:userPresent._id},process.env.SECRET_KEY)
+        response.send({message:"successfuly login",token:token})
+    }
+
+    else{
+        response.send({message:"invalis password"})
+    }
+})
+
 app.post("/books",async(request,response)=>{
   const books=request.body
   const result=await client.db("b28wd").collection("books").insertMany(books)
@@ -75,5 +122,19 @@ app.get("/books",async(request,response)=>{
     const books=await client.db("b28wd").collection("books").find({}).toArray()
     response.send(books)
 })
+
+async function getUserByEmail(email) {
+    return await client.db("b28wd").collection("flights-users").findOne({ email: email });
+}
+
+async function genPassword(password) {
+    const No_of_Rounds=10                  //no of random rounds
+    // add random no.of rounds to add after password
+    const salt=await bcrypt.genSalt(No_of_Rounds) 
+    // convert password into hashed
+    const hashedPassword=await bcrypt.hash(password,salt)
+    console.log("hassedpassword is :",hashedPassword)
+    return hashedPassword
+}
 
 app.listen(PORT,console.log("app started in ",PORT))
