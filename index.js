@@ -11,6 +11,24 @@ dotenv.config()
 const app=express();
 app.use(cors())
 app.use(express.json())
+
+const auth=(request,response,next)=>{
+    try {
+      // from front token is send in header,x-auth-token is the key
+    const token=request.header('x-auth-token')
+    console.log("token",token)
+    // after getting taken verify the token ,wathear the token is valid
+    // 1st paremeter token 2nd is secrect key
+    jwt.verify(token,process.env.SECRET_KEY)
+    // if token is valid go to next function
+    next();
+
+    } catch (err) {
+        response.status(401).send({error:err.message})
+    }
+    
+}
+
 const PORT=process.env.PORT
 
 const MONGO_URL=process.env.MONGO_URL;
@@ -47,21 +65,21 @@ app.get("/flight/:id",async(request,response)=>{
   response.send(flight)
 })
 
-app.post("/flight",async(request,response)=>{
+app.post("/flight",auth,async(request,response)=>{
     const flight=request.body
     console.log(flight)
     const result=await client.db("b28wd").collection("flights").insertOne(flight)
     response.send(result)
 })
 
-app.put("/flight/:id",async(request,response)=>{
+app.put("/flight/:id",auth,async(request,response)=>{
     const {id}=request.params
     const flight=request.body
     const result=await client.db("b28wd").collection("flights").updateOne({_id:ObjectID(id)},{$set:flight})
     response.send(result)
 })
 
-app.delete("/flight/:id",async(request,response)=>{
+app.delete("/flight/:id",auth,async(request,response)=>{
     const {id}=request.params
     const flight=await client.db("b28wd").collection("flights").deleteOne({_id:ObjectID(id)})
     response.send(flight)
@@ -136,5 +154,7 @@ async function genPassword(password) {
     console.log("hassedpassword is :",hashedPassword)
     return hashedPassword
 }
+
+
 
 app.listen(PORT,console.log("app started in ",PORT))
